@@ -17,14 +17,18 @@ jobs:
         run: uv python install 3.12
 
       - name: Install
-        run: uv pip install --system -e ".[dev]"
+        # A venv rather than --system: the runner's system Python is externally
+        # managed (PEP 668) and uv refuses to install into it.
+        run: |
+          uv venv --python 3.12
+          uv pip install -e ".[dev]"
 
       - name: Lint
-        run: ruff check doceval/ tests/
+        run: uv run ruff check doceval/ tests/
 
       # Tier 1 and Tier 2 are deterministic and need no API key, which is the
       # whole point of the tier split: the cheap signal runs on every commit.
       # ANTHROPIC_API_KEY is deliberately absent from this job -- if a test
       # silently started calling the API, it would fail here.
       - name: Test (offline; no API key present)
-        run: pytest tests/ -q
+        run: uv run pytest tests/ -q

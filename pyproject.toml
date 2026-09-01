@@ -1,0 +1,33 @@
+[project]
+name = "doceval"
+version = "0.1.0"
+description = "Document-QA over research papers where the evaluation harness is the product, not the chatbot."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "anthropic>=0.40",
+    "datasets>=3.0",
+    "sentence-transformers>=3.0",
+    "torch>=2.4",
+    "rank-bm25>=0.2.2",
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "pyarrow>=17",
+    "python-dotenv>=1.0",
+    "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[tool.setuptools.packages.find]
+include = ["doceval*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

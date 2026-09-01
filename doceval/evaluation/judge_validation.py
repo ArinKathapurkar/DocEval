@@ -17,9 +17,13 @@ when hand labels are available.
      appended. The padding adds no information and contradicts nothing, so a
      well-behaved judge should not move. LLM judges commonly reward length.
 
-  3. Self-consistency. Judge the same item repeatedly at temperature 1.0 and
+  3. Self-consistency. Judge the same item repeatedly under production defaults and
      report the spread. A judge whose own variance approaches the effect you are
      trying to measure cannot resolve that effect.
+
+     anthropic SDK 1.3.0 removed the `temperature` argument, so this measures the
+     nondeterminism a deployment would actually experience rather than variance
+     induced by a setting nobody ships with.
 
 Human agreement (Cohen's kappa) requires labels this tool cannot invent. Use
 make_label_set.py to export items, label them by hand, and the kappa section
@@ -70,8 +74,7 @@ def main(args) -> None:
     questions = pd.read_parquet(paths.QUESTIONS).set_index("question_id")
     text_of = dict(zip(chunks.chunk_id, chunks.text, strict=True))
 
-    judge = Judge(temperature=0.0)
-    hot = Judge(temperature=1.0)
+    judge = Judge()
     out: dict = {"n_items": len(answers)}
 
     base, reversed_, padded = defaultdict(list), defaultdict(list), defaultdict(list)
@@ -96,7 +99,7 @@ def main(args) -> None:
         if args.consistency_runs > 1:
             for _ in range(args.consistency_runs):
                 consistency[qid].append(
-                    hot.judge(qid, a["question"], ctx, a["answer"], ref).faithfulness
+                    judge.judge(qid, a["question"], ctx, a["answer"], ref).faithfulness
                 )
 
     # ── probe 1: position bias ──────────────────────────────────────────────
@@ -137,7 +140,7 @@ def main(args) -> None:
         human_rows = [json.loads(x) for x in labeled.read_text().splitlines() if x.strip()]
         by_qid = {r["question_id"]: r for r in human_rows}
         out["human_agreement"] = {}
-        # Align the temperature-0 judge scores with the hand labels by question_id.
+        # Align the judge scores with the hand labels by question_id.
         qids = [a["question_id"] for a in answers]
         for axis in AXES:
             j, h = [], []

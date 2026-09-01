@@ -14,6 +14,12 @@ something, and Tier 4 exists to check whether that worked.
 
 Structured output comes back via forced tool use, so a malformed judgment is
 impossible rather than merely unlikely.
+
+Note on sampling: anthropic SDK 1.3.0 no longer exposes a `temperature` argument on
+messages.create (output_config carries `effort` and `format` instead). The
+self-consistency probe in Tier 4 therefore repeats identical calls under production
+defaults and reports the variance actually observed, rather than variance induced by
+a temperature setting a deployment would not use anyway.
 """
 
 import json
@@ -97,7 +103,7 @@ def build_prompt(question: str, contexts: list[tuple[str, str]],
 class Judge:
     """Wraps the Anthropic client. Inject `client` in tests to avoid API calls."""
 
-    def __init__(self, client=None, model: str = MODEL, temperature: float = 0.0):
+    def __init__(self, client=None, model: str = MODEL):
         if client is None:
             import anthropic
 
@@ -107,14 +113,12 @@ class Judge:
             client = anthropic.Anthropic(api_key=key)
         self.client = client
         self.model = model
-        self.temperature = temperature
 
     def judge(self, question_id: str, question: str, contexts: list[tuple[str, str]],
               answer: str, reference: str) -> Judgment:
         resp = self.client.messages.create(
             model=self.model,
             max_tokens=512,
-            temperature=self.temperature,
             system=SYSTEM,
             tools=[TOOL],
             tool_choice={"type": "tool", "name": "submit_judgment"},

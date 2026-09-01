@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Lint
+        run: ruff check doceval/ tests/
+
+      # Tier 1 and Tier 2 are deterministic and need no API key, which is the
+      # whole point of the tier split: the cheap signal runs on every commit.
+      # ANTHROPIC_API_KEY is deliberately absent from this job -- if a test
+      # silently started calling the API, it would fail here.
+      - name: Test (offline; no API key present)
+        run: pytest tests/ -q

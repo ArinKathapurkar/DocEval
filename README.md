@@ -189,9 +189,21 @@ to reward length. The −0.375 faithfulness drop is a **genuine bias**: the padd
 no unsupported claims, so faithfulness should not have moved at all. The judge is
 letting a stylistic property leak into a factual-grounding judgment.
 
-**Human agreement (Cohen's kappa)** is not reported. It requires hand labels, and
-fabricating them would defeat the purpose of the tier. `golden/to_label.jsonl` holds 50
-exported items ready for labeling.
+**Human agreement (Cohen's kappa)** is not reported yet. It requires hand labels, and
+generating them with an LLM would defeat the purpose of the tier — particularly with
+*this* judge, since a Claude-labeled set would share the judge's blind spots and inflate
+the agreement it is supposed to test.
+
+To produce it:
+
+```bash
+python -m doceval.evaluation.label_cli              # score 25 items by hand
+python -m doceval.evaluation.judge_validation --reuse-judgments
+```
+
+The CLI saves after every item and resumes where you left off. 25 labels give a real
+human kappa with wider confidence intervals than 50 — the honest trade, stated rather
+than hidden.
 
 ## Reproducing
 
